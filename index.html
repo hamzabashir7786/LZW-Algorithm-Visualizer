@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LZW Compression — Algorithm Visualizer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-badge">Hamza</div>
+      <div class="header-title-block">
+        <span class="header-label">Algorithm Analysis</span>
+        <h1 class="header-title">LZW Compression<span class="accent">.</span></h1>
+        <p class="header-subtitle">Visualization & Complexity Analysis Tool</p>
+      </div>
+      <nav class="header-nav">
+        <a href="#visualizer">Visualizer</a>
+        <a href="#complexity">Complexity</a>
+        <a href="#graphs">Graphs</a>
+        <a href="#education">Theory</a>
+        <a href="#testing">Tests</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 1 — INPUT & CONTROL
+    ═══════════════════════════════════════════════════ -->
+    <section id="visualizer" class="section">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <div>
+          <h2 class="section-title">Algorithm Visualizer</h2>
+          <p class="section-desc">Enter a string and watch LZW build its dictionary in real time.</p>
+        </div>
+      </div>
+
+      <div class="input-panel card">
+        <div class="input-row">
+          <div class="input-group">
+            <label for="inputString">Input String</label>
+            <input type="text" id="inputString" value="ABABABA" placeholder="e.g. ABABABABCDE" spellcheck="false" />
+          </div>
+          <div class="input-group speed-group">
+            <label for="speedSlider">Step Speed</label>
+            <div class="speed-row">
+              <span>Slow</span>
+              <input type="range" id="speedSlider" min="100" max="1500" value="700" step="100" />
+              <span>Fast</span>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnRun">▶ Run LZW Compression</button>
+          <button class="btn btn-secondary" id="btnStep" disabled>Step →</button>
+          <button class="btn btn-ghost" id="btnReset">↺ Reset</button>
+        </div>
+        <div class="sample-row">
+          <span class="sample-label">Samples:</span>
+          <button class="sample-btn" data-val="ABABABA">ABABABA</button>
+          <button class="sample-btn" data-val="TOBEORNOTTOBEORTOBEORNOT">TOBEORNOT…</button>
+          <button class="sample-btn" data-val="AAAAAAAAA">AAAAAAAAA</button>
+          <button class="sample-btn" data-val="ABCABCABC">ABCABCABC</button>
+          <button class="sample-btn" data-val="MISSISSIPPI">MISSISSIPPI</button>
+        </div>
+      </div>
+
+      <!-- Live step display -->
+      <div class="viz-grid">
+        <!-- Current Step Info -->
+        <div class="card step-card">
+          <div class="card-title">Current Step</div>
+          <div class="step-display">
+            <div class="step-item">
+              <span class="step-label">Position</span>
+              <span class="step-value mono" id="stepPos">—</span>
+            </div>
+            <div class="step-item">
+              <span class="step-label">Current Char</span>
+              <span class="step-value mono accent" id="stepChar">—</span>
+            </div>
+            <div class="step-item">
+              <span class="step-label">Current String (W)</span>
+              <span class="step-value mono highlight-blue" id="stepW">—</span>
+            </div>
+            <div class="step-item">
+              <span class="step-label">W + C</span>
+              <span class="step-value mono" id="stepWC">—</span>
+            </div>
+            <div class="step-item">
+              <span class="step-label">Action</span>
+              <span class="step-value" id="stepAction">—</span>
+            </div>
+            <div class="step-item">
+              <span class="step-label">Output Code</span>
+              <span class="step-value mono highlight-orange" id="stepOutput">—</span>
+            </div>
+          </div>
+          <div class="step-counter">Step <span id="stepCount">0</span> / <span id="stepTotal">0</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+
+        <!-- Input String Tape -->
+        <div class="card tape-card">
+          <div class="card-title">Input Tape</div>
+          <div class="tape-wrap" id="inputTape"></div>
+        </div>
+
+        <!-- Output Codes -->
+        <div class="card output-codes-card">
+          <div class="card-title">Output Codes (Live)</div>
+          <div class="codes-wrap" id="outputCodes"></div>
+        </div>
+      </div>
+
+      <!-- Dictionary Table -->
+      <div class="card dict-card">
+        <div class="card-title">Dictionary (Live Updates)
+          <span class="dict-count">Entries: <strong id="dictCount">0</strong></span>
+        </div>
+        <div class="dict-scroll">
+          <table class="dict-table" id="dictTable">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>String</th>
+                <th>Type</th>
+                <th>Added at Step</th>
+              </tr>
+            </thead>
+            <tbody id="dictBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Final Output -->
+      <div class="card result-card" id="resultCard" style="display:none">
+        <div class="card-title">Compression Results</div>
+        <div class="result-grid">
+          <div class="result-stat">
+            <div class="result-val" id="resOrigSize">—</div>
+            <div class="result-key">Original Size (bits)</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-val accent" id="resCompSize">—</div>
+            <div class="result-key">Compressed Size (bits)</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-val highlight-green" id="resRatio">—</div>
+            <div class="result-key">Compression Ratio</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-val" id="resSteps">—</div>
+            <div class="result-key">Total Steps</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-val" id="resDictSize">—</div>
+            <div class="result-key">Dictionary Entries</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-val highlight-orange" id="resTime">—</div>
+            <div class="result-key">Execution Time (ms)</div>
+          </div>
+        </div>
+        <div class="output-array-label">Compressed Output Array:</div>
+        <div class="output-array" id="outputArray"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 2 — COMPLEXITY ANALYSIS
+    ═══════════════════════════════════════════════════ -->
+    <section id="complexity" class="section">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <div>
+          <h2 class="section-title">Complexity Analyzer</h2>
+          <p class="section-desc">Automatically calculated based on your input and run results.</p>
+        </div>
+      </div>
+
+      <div class="complexity-grid">
+        <!-- Time Complexity -->
+        <div class="card complexity-card">
+          <div class="card-title">⏱ Time Complexity</div>
+          <div class="big-o" id="timeBigO">O(n)</div>
+          <div class="complexity-cases">
+            <div class="case-row">
+              <div class="case-label best">Best Case</div>
+              <div class="case-notation">Ω(n)</div>
+              <div class="case-desc" id="timeBest">All characters match → fewest dictionary lookups.</div>
+            </div>
+            <div class="case-row">
+              <div class="case-label avg">Average Case</div>
+              <div class="case-notation">Θ(n)</div>
+              <div class="case-desc" id="timeAvg">Typical input → linear scan with dictionary insertions.</div>
+            </div>
+            <div class="case-row">
+              <div class="case-label worst">Worst Case</div>
+              <div class="case-notation">O(n)</div>
+              <div class="case-desc" id="timeWorst">No repeating pattern → max dictionary builds, still linear.</div>
+            </div>
+          </div>
+          <div class="complexity-note">
+            <strong>Why O(n)?</strong> Each character is visited exactly once. Dictionary lookup via hash map is O(1) amortized. Total: <em>n</em> iterations × O(1) = <strong>O(n)</strong>.
+          </div>
+          <div class="measured-row">
+            <span>Measured (n=<span id="measuredN">0</span>):</span>
+            <span class="mono" id="measuredTime">—</span>
+          </div>
+        </div>
+
+        <!-- Space Complexity -->
+        <div class="card complexity-card">
+          <div class="card-title">🗄 Space Complexity</div>
+          <div class="big-o accent" id="spaceBigO">O(n)</div>
+          <div class="complexity-cases">
+            <div class="case-row">
+              <div class="case-label best">Dictionary</div>
+              <div class="case-notation mono" id="spaceDictEntries">0 entries</div>
+              <div class="case-desc">Grows with unique substrings discovered. Max = 256 + (n−1).</div>
+            </div>
+            <div class="case-row">
+              <div class="case-label avg">Aux Memory</div>
+              <div class="case-notation mono" id="spaceAux">0 bytes</div>
+              <div class="case-desc">Output array + current string pointer. O(n) for output codes.</div>
+            </div>
+            <div class="case-row">
+              <div class="case-label worst">Total Estimate</div>
+              <div class="case-notation mono" id="spaceTotal">0 KB</div>
+              <div class="case-desc">Dictionary strings + code array combined.</div>
+            </div>
+          </div>
+          <div class="complexity-note">
+            <strong>Why O(n)?</strong> In the worst case, each step adds one new dictionary entry. With <em>n</em> steps, dictionary grows at most <em>n</em> entries beyond the initial 256 ASCII entries.
+          </div>
+          <div class="measured-row">
+            <span>Dictionary Growth Rate:</span>
+            <span class="mono" id="dictGrowthRate">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complexity Table -->
+      <div class="card">
+        <div class="card-title">Complexity Summary Table</div>
+        <table class="complexity-table">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Time</th>
+              <th>Space</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dictionary Init (256 ASCII)</td>
+              <td class="mono">O(1)</td>
+              <td class="mono">O(256)</td>
+              <td>Constant, one-time setup</td>
+            </tr>
+            <tr>
+              <td>Single Character Lookup</td>
+              <td class="mono">O(1)</td>
+              <td class="mono">O(1)</td>
+              <td>Hash map lookup — amortized constant</td>
+            </tr>
+            <tr>
+              <td>Dictionary Insertion</td>
+              <td class="mono">O(1)</td>
+              <td class="mono">O(|W|)</td>
+              <td>Proportional to string length stored</td>
+            </tr>
+            <tr>
+              <td>Full Compression Pass</td>
+              <td class="mono">O(n)</td>
+              <td class="mono">O(n)</td>
+              <td>One pass over n characters</td>
+            </tr>
+            <tr>
+              <td>Output Generation</td>
+              <td class="mono">O(n)</td>
+              <td class="mono">O(n)</td>
+              <td>At most n codes produced</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 3 — GRAPHS
+    ═══════════════════════════════════════════════════ -->
+    <section id="graphs" class="section">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <div>
+          <h2 class="section-title">Performance Graphs</h2>
+          <p class="section-desc">Dynamic benchmarks across multiple input sizes.</p>
+        </div>
+      </div>
+
+      <div class="graph-controls card">
+        <div class="graph-info">
+          Benchmarks run LZW on randomly generated strings of various sizes.<br>
+          <span class="mono">Sizes tested: 10, 50, 100, 200, 500, 1000, 2000</span>
+        </div>
+        <button class="btn btn-primary" id="btnBenchmark">📊 Run Benchmark</button>
+      </div>
+
+      <div class="graphs-grid">
+        <div class="card graph-card">
+          <div class="card-title">Graph 1 — Input Size vs Execution Time</div>
+          <canvas id="graphTime" width="600" height="300"></canvas>
+          <div class="graph-axes-labels">
+            <span class="x-label">Input Size (n)</span>
+            <span class="y-label">Time (ms)</span>
+          </div>
+        </div>
+        <div class="card graph-card">
+          <div class="card-title">Graph 2 — Input Size vs Dictionary Size</div>
+          <canvas id="graphSpace" width="600" height="300"></canvas>
+          <div class="graph-axes-labels">
+            <span class="x-label">Input Size (n)</span>
+            <span class="y-label">Dictionary Entries</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="graphs-grid">
+        <div class="card graph-card">
+          <div class="card-title">Graph 3 — Input Size vs Compression Ratio</div>
+          <canvas id="graphRatio" width="600" height="300"></canvas>
+          <div class="graph-axes-labels">
+            <span class="x-label">Input Size (n)</span>
+            <span class="y-label">Compression Ratio (%)</span>
+          </div>
+        </div>
+        <div class="card graph-card">
+          <div class="card-title">Graph 4 — Dictionary Growth per Step</div>
+          <canvas id="graphDict" width="600" height="300"></canvas>
+          <div class="graph-axes-labels">
+            <span class="x-label">Step Number</span>
+            <span class="y-label">Dictionary Entries</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card benchmark-results" id="benchmarkTable" style="display:none">
+        <div class="card-title">Benchmark Data Table</div>
+        <table class="complexity-table" id="benchTableEl">
+          <thead>
+            <tr>
+              <th>Input Size (n)</th>
+              <th>Execution Time (ms)</th>
+              <th>Dictionary Entries</th>
+              <th>Output Codes</th>
+              <th>Compression Ratio</th>
+            </tr>
+          </thead>
+          <tbody id="benchTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 4 — EDUCATIONAL
+    ═══════════════════════════════════════════════════ -->
+    <section id="education" class="section">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <div>
+          <h2 class="section-title">Algorithm Theory</h2>
+          <p class="section-desc">Understanding LZW from first principles.</p>
+        </div>
+      </div>
+
+      <div class="edu-grid">
+        <div class="card edu-card">
+          <div class="edu-icon">🧠</div>
+          <h3>What is LZW?</h3>
+          <p>
+            Lempel–Ziv–Welch (LZW) is a universal lossless data compression algorithm published by Abraham Lempel, Jacob Ziv, and Terry Welch in 1984. It builds a dictionary of substrings dynamically during encoding — <em>no prior knowledge of the data is needed</em>.
+          </p>
+          <p>
+            Unlike Huffman coding (which assigns shorter codes to frequent symbols), LZW replaces <strong>variable-length strings</strong> with <strong>fixed-length codes</strong>, achieving compression when repeated patterns exist.
+          </p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">⚙️</div>
+          <h3>How It Works (Step-by-Step)</h3>
+          <ol class="edu-steps">
+            <li><strong>Initialize</strong> the dictionary with all 256 ASCII characters (codes 0–255).</li>
+            <li>Read input character <code>C</code>. Set current string <code>W = C</code>.</li>
+            <li>While <code>W+C</code> exists in the dictionary: append <code>C</code> to <code>W</code>, read next <code>C</code>.</li>
+            <li><strong>Output</strong> the code for <code>W</code>.</li>
+            <li><strong>Add</strong> <code>W+C</code> to the dictionary with next available code.</li>
+            <li>Set <code>W = C</code>. Repeat from step 3 until input is exhausted.</li>
+            <li>Output the code for the final <code>W</code>.</li>
+          </ol>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">🌐</div>
+          <h3>Real-World Applications</h3>
+          <ul class="edu-list">
+            <li><span class="tag-zip">ZIP</span> Early ZIP and Unix compress utility used LZW</li>
+            <li><span class="tag-gif">GIF</span> GIF image format uses LZW for pixel data</li>
+            <li><span class="tag-tiff">TIFF</span> TIFF image compression option</li>
+            <li><span class="tag-pdf">PDF</span> PDF files support LZW stream compression</li>
+            <li><span class="tag-net">NET</span> Network protocol data compression</li>
+          </ul>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-icon">⚖️</div>
+          <h3>Advantages & Limitations</h3>
+          <div class="pros-cons">
+            <div class="pros">
+              <div class="pros-title">✓ Advantages</div>
+              <ul>
+                <li>Single-pass algorithm — O(n)</li>
+                <li>No prior training data needed</li>
+                <li>Adaptive to input patterns</li>
+                <li>Decompression also O(n)</li>
+              </ul>
+            </div>
+            <div class="cons">
+              <div class="cons-title">✗ Limitations</div>
+              <ul>
+                <li>Dictionary can grow large</li>
+                <li>Poor on already-compressed data</li>
+                <li>Patent issues historically (GIF)</li>
+                <li>Superseded by LZ77/Deflate in practice</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card edu-card full-width">
+          <div class="edu-icon">📐</div>
+          <h3>Algorithm Pseudocode</h3>
+          <pre class="pseudocode">
+<span class="kw">function</span> LZW_Compress(input):
+    <span class="cm">// Step 1: Initialize dictionary with ASCII chars</span>
+    dict ← {char: code  <span class="kw">for</span> code, char <span class="kw">in</span> enumerate(ASCII_256)}
+    next_code ← 256
+    output   ← []
+
+    W ← input[0]                      <span class="cm">// current string</span>
+
+    <span class="kw">for</span> i ← 1 <span class="kw">to</span> len(input) - 1:
+        C ← input[i]                   <span class="cm">// current character</span>
+        <span class="kw">if</span> W + C <span class="kw">in</span> dict:
+            W ← W + C                  <span class="cm">// extend match</span>
+        <span class="kw">else</span>:
+            output.append(dict[W])     <span class="cm">// emit code for W</span>
+            dict[W + C] ← next_code    <span class="cm">// add W+C to dict</span>
+            next_code ← next_code + 1
+            W ← C                      <span class="cm">// reset W to C</span>
+
+    output.append(dict[W])             <span class="cm">// emit final code</span>
+    <span class="kw">return</span> output
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 5 — TEST CASES
+    ═══════════════════════════════════════════════════ -->
+    <section id="testing" class="section">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <div>
+          <h2 class="section-title">Test Cases</h2>
+          <p class="section-desc">Predefined inputs with expected vs actual outputs.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Test Suite
+          <button class="btn btn-primary btn-sm" id="btnRunTests">▶ Run All Tests</button>
+        </div>
+        <table class="complexity-table test-table" id="testTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Input</th>
+              <th>Expected First Codes</th>
+              <th>Actual Output</th>
+              <th>Dict Entries</th>
+              <th>Ratio</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="testBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>LZW Compression Visualizer</div>
+    <div class="footer-clos">
+      <a href="https://github.com/hamzabashir7786" target="_blank">
+        GitHub
+      </a>
+      &nbsp;|&nbsp;
+      <a href="www.linkedin.com/in/muhammadhamzabashir7786" target="_blank">
+        LinkedIn
+    </div>
+  </div>
+</footer>
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
