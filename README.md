@@ -22,11 +22,11 @@ LZW is a universal lossless data compression algorithm. This visualizer provides
 ## 📈 Algorithmic Insights
 - **Design Strategy:** Dictionary-based Greedy Approach.
 - **Time Complexity:** - Best Case: $\Omega(n)$
-  - Average Case: $\Theta(n)$
+  - Average Case: $\Theta(n)$  
   - Worst Case: $O(n)$
 - **Space Complexity:** $O(n)$ (Dynamic dictionary expansion).
 
 ## 💻 Installation & Usage
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/yourusername/LZW-Visualizer.git](https://github.com/yourusername/LZW-Visualizer.git)
+   git clone [https://github.com/hamzabashir7786/LZW-Algorithm-Visualizer]
