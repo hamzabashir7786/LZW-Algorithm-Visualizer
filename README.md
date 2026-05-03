@@ -1,5 +1,3 @@
-# LZW-Algorithm-Visualizer
-Algorithm analysis and visualization of LZW compression.
 # LZW Compression Algorithm Visualizer
 
 A high-performance web-based tool designed to visualize and benchmark the **Lempel–Ziv–Welch (LZW)** lossless data compression algorithm. This project demonstrates the implementation of dictionary-based greedy strategies and their empirical analysis.
