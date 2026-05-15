@@ -26,6 +26,9 @@ LZW is a universal lossless data compression algorithm. This visualizer provides
   - Worst Case: $O(n)$
 - **Space Complexity:** $O(n)$ (Dynamic dictionary expansion).
 
+## Live Demo
+- https://lzw-algorithm-visualizer.vercel.app/
+
 ## 💻 Installation & Usage
 1. Clone the repository:
    ```bash
